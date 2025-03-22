@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>קורא וכותב NFC</title>
+    <meta name="description" content="אפליקציית קורא וכותב NFC">
+    <meta name="theme-color" content="#3498db">
+    
+    <!-- קישור לקובץ manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- איקונים לדפדפן ולמכשיר -->
+    <link rel="icon" type="image/png" href="icon-192x192.png" sizes="192x192">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+            direction: rtl;
+            background-color: #f0f4f8;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        #status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #ffffff;
+            min-height: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        #tag-data {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #ffffff;
+            text-align: left;
+            direction: ltr;
+            white-space: pre-wrap;
+            display: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        button {
+            background-color: #3498db;
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 10px 2px;
+            cursor: pointer;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .error {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .success {
+            color: #2ecc71;
+            font-weight: bold;
+        }
+        
+        #install-container {
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            display: none;
+        }
+        
+        .nfc-icon {
+            font-size: 60px;
+            margin: 20px 0;
+            color: #3498db;
+        }
+        
+        .app-container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .mode-selector {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .mode-button {
+            background-color: #ecf0f1;
+            color: #2c3e50;
+            border: 2px solid #bdc3c7;
+            padding: 12px 20px;
+            margin: 0 5px;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .mode-button.active {
+            background-color: #3498db;
+            color: white;
+            border-color: #2980b9;
+        }
+
+        .form-group {
+            margin: 15px 0;
+            text-align: right;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            direction: ltr;
+            text-align: left;
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .write-container {
+            display: none;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+            border: 1px solid #e9ecef;
+        }
+
+        .saved-id {
+            background-color: #e8f4fd;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 5px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .copy-button {
+            background-color: #27ae60;
+            padding: 5px 10px;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+
+        #saved-ids-container {
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+
+        .tab-container {
+            margin: 20px 0;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            border-radius: 5px 5px 0 0;
+            margin-left: 5px;
+            cursor: pointer;
+        }
+
+        .tab.active {
+            background-color: #fff;
+            border-bottom-color: #fff;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <h1>קורא וכותב NFC</h1>
+        <div class="nfc-icon">📱</div>
+        
+        <div id="install-container">
+            <p>להתקנת האפליקציה על המכשיר שלך:</p>
+            <button id="install-button">התקן אפליקציה</button>
+        </div>
+        
+        <div class="tab-container">
+            <div class="tabs">
+                <div class="tab active" data-tab="read">קריאת NFC</div>
+                <div class="tab" data-tab="write">כתיבת NFC</div>
+                <div class="tab" data-tab="saved">מאגר IDs</div>
+            </div>
+            
+            <!-- לשונית קריאה -->
+            <div id="read-tab" class="tab-content active">
+                <p>הצמידו תג NFC לגב המכשיר לאחר לחיצה על כפתור הסריקה</p>
+                <button id="scan-button">התחל סריקה</button>
+                <div id="status">מוכן לסריקה...</div>
+                <div id="tag-data"></div>
+                <div class="action-buttons" id="read-actions" style="display: none;">
+                    <button id="save-id-button">שמור ID למאגר</button>
+                    <button id="copy-to-write-button">העתק לכתיבה</button>
+                </div>
+            </div>
+            
+            <!-- לשונית כתיבה -->
+            <div id="write-tab" class="tab-content">
+                <p>באפשרותך לכתוב ID מותאם או להשתמש ב-ID שנשמר קודם</p>
+                
+                <div class="form-group">
+                    <label for="custom-id">ID מותאם אישית (הקלד או העתק):</label>
+                    <input type="text" id="custom-id" placeholder="הזן ID לכתיבה" dir="ltr">
+                </div>
+                
+                <div class="form-group">
+                    <label for="record-type">סוג רשומה:</label>
+                    <select id="record-type">
+                        <option value="text">טקסט</option>
+                        <option value="url">כתובת URL</option>
+                        <option value="id">מזהה ID בלבד</option>
+                    </select>
+                </div>
+                
+                <button id="write-button">כתוב לתג NFC</button>
+                <div id="write-status">מוכן לכתיבה...</div>
+            </div>
+            
+            <!-- לשונית מאגר IDs -->
+            <div id="saved-tab" class="tab-content">
+                <h3>IDs שמורים</h3>
+                <div id="saved-ids-container">
+                    <p>אין עדיין IDs שמורים</p>
+                </div>
+                <button id="clear-saved-button">נקה את כל ה-IDs השמורים</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // בדיקה אם Service Worker נתמך
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => {
+                        console.log('Service Worker נרשם בהצלחה:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('רישום Service Worker נכשל:', error);
+                    });
+            });
+        }
+        
+        // התקנת PWA
+        let deferredPrompt;
+        const installContainer = document.getElementById('install-container');
+        const installButton = document.getElementById('install-button');
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // מניעת הצגה אוטומטית של חלון ההתקנה
+            e.preventDefault();
+            // שמירת האירוע כדי להפעיל אותו מאוחר יותר
+            deferredPrompt = e;
+            // הצגת כפתור ההתקנה שלנו
+            installContainer.style.display = 'block';
+        });
+        
+        installButton.addEventListener('click', () => {
+            // הסתרת כפתור ההתקנה
+            installContainer.style.display = 'none';
+            // הצגת חלון ההתקנה
+            deferredPrompt.prompt();
+            // בדיקה אם המשתמש קיבל את ההתקנה
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('המשתמש התקין את ה-PWA');
+                } else {
+                    console.log('המשתמש דחה את ההתקנה');
+                }
+                deferredPrompt = null;
+            });
+        });
+        
+        // בדיקה אם האפליקציה כבר מותקנת
+        window.addEventListener('appinstalled', (evt) => {
+            installContainer.style.display = 'none';
+            console.log('האפליקציה הותקנה בהצלחה');
+        });
+        
+        // ניהול לשוניות
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const targetTab = tab.getAttribute('data-tab');
+                    
+                    // מעדכן את מצב הלשוניות
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    // מעדכן את התוכן המוצג
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    document.getElementById(`${targetTab}-tab`).classList.add('active');
+                });
+            });
+            
+            // אתחול משתנים גלובליים
+            let lastReadSerialNumber = '';
+            let lastReadData = null;
+            let savedIds = getSavedIds();
+            
+            // מציג IDs שמורים
+            updateSavedIdsDisplay();
+            
+            // פונקציונליות קריאת NFC
+            const scanButton = document.getElementById('scan-button');
+            const statusDiv = document.getElementById('status');
+            const tagDataDiv = document.getElementById('tag-data');
+            const readActionsDiv = document.getElementById('read-actions');
+            const saveIdButton = document.getElementById('save-id-button');
+            const copyToWriteButton = document.getElementById('copy-to-write-button');
+            
+            // פונקציונליות כתיבת NFC
+            const writeButton = document.getElementById('write-button');
+            const customIdInput = document.getElementById('custom-id');
+            const writeStatusDiv = document.getElementById('write-status');
+            const recordTypeSelect = document.getElementById('record-type');
+            
+            // פונקציונליות מאגר IDs
+            const clearSavedButton = document.getElementById('clear-saved-button');
+            
+            // בדיקה אם הדפדפן תומך ב-NFC
+            if ('NDEFReader' in window) {
+                // פונקציונליות קריאת NFC
+                scanButton.addEventListener('click', async () => {
+                    try {
+                        statusDiv.textContent = 'מחפש תג NFC...';
+                        statusDiv.className = '';
+                        tagDataDiv.style.display = 'none';
+                        readActionsDiv.style.display = 'none';
+                        scanButton.disabled = true;
+                        
+                        const ndef = new NDEFReader();
+                        await ndef.scan().catch(error => {
+                            console.error(`Error: ${error.message}`);
+                            if (error.name === 'NotAllowedError') {
+                                statusDiv.textContent = 'המשתמש סירב להרשאת NFC. נא לנסות שוב ולאשר את ההרשאה.';
+                            } else if (error.name === 'NotSupportedError') {
+                                statusDiv.textContent = 'NFC לא נתמך במכשיר זה או מכובה בהגדרות.';
+                            } else {
+                                statusDiv.textContent = `שגיאה: ${error.message}`;
+                            }
+                            statusDiv.className = 'error';
+                            scanButton.disabled = false;
+                            return Promise.reject(error);
+                        });
+                        
+                        statusDiv.textContent = 'סריקה פעילה, נא להצמיד תג NFC למכשיר';
+                        
+                        ndef.addEventListener("reading", ({ message, serialNumber }) => {
+                            console.log(`> Serial Number: ${serialNumber}`);
+                            console.log(`> Records: (${message.records.length})`);
+                            
+                            // שמירת המידע האחרון שנקרא
+                            lastReadSerialNumber = serialNumber;
+                            lastReadData = message;
+                            
+                            let displayText = `מספר סידורי: ${serialNumber}\n\nרשומות (${message.records.length}):\n`;
+                            
+                            message.records.forEach((record, index) => {
+                                displayText += `\nרשומה ${index + 1}:\n`;
+                                displayText += `סוג: ${record.recordType}\n`;
+                                displayText += `סוג MIME: ${record.mediaType || 'לא זמין'}\n`;
+                                
+                                if (record.recordType === "text") {
+                                    const textDecoder = new TextDecoder(record.encoding);
+                                    displayText += `טקסט: ${textDecoder.decode(record.data)}\n`;
+                                } else if (record.recordType === "url") {
+                                    const textDecoder = new TextDecoder();
+                                    displayText += `URL: ${textDecoder.decode(record.data)}\n`;
+                                } else {
+                                    // מציג נתונים גולמיים כ-hex
+                                    const hexData = Array.from(new Uint8Array(record.data))
+                                        .map(b => b.toString(16).padStart(2, '0'))
+                                        .join(' ');
+                                    displayText += `נתונים (HEX): ${hexData}\n`;
+                                }
+                            });
+                            
+                            statusDiv.textContent = 'תג NFC נקרא בהצלחה!';
+                            statusDiv.className = 'success';
+                            tagDataDiv.textContent = displayText;
+                            tagDataDiv.style.display = 'block';
+                            readActionsDiv.style.display = 'flex';
+                            scanButton.disabled = false;
+                            
+                            // עדכון שדה ה-ID בטופס הכתיבה
+                            customIdInput.value = serialNumber;
+                        });
+                        
+                        ndef.addEventListener("readingerror", () => {
+                            statusDiv.textContent = 'שגיאה בקריאת תג NFC';
+                            statusDiv.className = 'error';
+                            scanButton.disabled = false;
+                        });
+                        
+                    } catch (error) {
+                        statusDiv.textContent = `שגיאה כללית: ${error.message}`;
+                        statusDiv.className = 'error';
+                        console.error(error);
+                        scanButton.disabled = false;
+                    }
+                });
+                
+                // פונקציונליות לחצני תצוגת הקריאה
+                saveIdButton.addEventListener('click', () => {
+                    if (lastReadSerialNumber) {
+                        saveId(lastReadSerialNumber);
+                        statusDiv.textContent = `ה-ID ${lastReadSerialNumber} נשמר למאגר`;
+                        statusDiv.className = 'success';
+                    }
+                });
+                
+                copyToWriteButton.addEventListener('click', () => {
+                    if (lastReadSerialNumber) {
+                        customIdInput.value = lastReadSerialNumber;
+                        
+                        // מעבר ללשונית כתיבה
+                        document.querySelector('.tab[data-tab="write"]').click();
+                        
+                        writeStatusDiv.textContent = `ה-ID הועתק והינך מוכן לכתיבה`;
+                        writeStatusDiv.className = 'success';
+                    }
+                });
+                
+                // פונקציונליות כתיבת NFC
+                writeButton.addEventListener('click', async () => {
+                    const idToWrite = customIdInput.value.trim();
+                    const recordType = recordTypeSelect.value;
+                    
+                    if (!idToWrite) {
+                        writeStatusDiv.textContent = 'נא להזין ID לכתיבה';
+                        writeStatusDiv.className = 'error';
+                        return;
+                    }
+                    
+                    try {
+                        writeStatusDiv.textContent = 'מוכן לכתיבה, נא להצמיד תג NFC למכשיר';
+                        writeStatusDiv.className = '';
+                        writeButton.disabled = true;
+                        
+                        const ndef = new NDEFReader();
+                        await ndef.write(createNdefMessage(idToWrite, recordType)).catch(error => {
+                            console.error(`Error: ${error.message}`);
+                            if (error.name === 'NotAllowedError') {
+                                writeStatusDiv.textContent = 'המשתמש סירב להרשאת NFC. נא לנסות שוב ולאשר את ההרשאה.';
+                            } else if (error.name === 'NotSupportedError') {
+                                writeStatusDiv.textContent = 'NFC לא נתמך במכשיר זה או מכובה בהגדרות.';
+                            } else if (error.name === 'NotReadableError') {
+                                writeStatusDiv.textContent = 'לא ניתן לקרוא את התג, ייתכן שהתג מוגן לכתיבה.';
+                            } else {
+                                writeStatusDiv.textContent = `שגיאה: ${error.message}`;
+                            }
+                            writeStatusDiv.className = 'error';
+                            writeButton.disabled = false;
+                            return Promise.reject(error);
+                        });
+                        
+                        writeStatusDiv.textContent = 'התג נכתב בהצלחה!';
+                        writeStatusDiv.className = 'success';
+                        writeButton.disabled = false;
+                        
+                    } catch (error) {
+                        writeStatusDiv.textContent = `שגיאה כללית: ${error.message}`;
+                        writeStatusDiv.className = 'error';
+                        console.error(error);
+                        writeButton.disabled = false;
+                    }
+                });
+                
+                // פונקציונליות ניהול IDs שמורים
+                clearSavedButton.addEventListener('click', () => {
+                    localStorage.removeItem('nfc_saved_ids');
+                    savedIds = [];
+                    updateSavedIdsDisplay();
+                });
+                
+            } else {
+                // הדפדפן לא תומך ב-NFC
+                statusDiv.textContent = 'הדפדפן שלך לא תומך ב-Web NFC API';
+                writeStatusDiv.textContent = 'הדפדפן שלך לא תומך ב-Web NFC API';
+                statusDiv.className = 'error';
+                writeStatusDiv.className = 'error';
+                scanButton.disabled = true;
+                writeButton.disabled = true;
+            }
+            
+            // פונקציות עזר
+            
+            // יצירת הודעת NDEF לכתיבה בהתאם לסוג הרשומה
+            function createNdefMessage(data, recordType) {
+                switch (recordType) {
+                    case 'url':
+                        // בדיקה אם המחרוזת מתחילה ב-URL תקין
+                        if (!data.startsWith('http://') && !data.startsWith('https://')) {
+                            data = 'https://' + data;
+                        }
+                        return { records: [{ recordType: "url", data: data }] };
+                    
+                    case 'text':
+                        return { records: [{ recordType: "text", data: data, lang: "he" }] };
+                    
+                    case 'id':
+                    default:
+                        // כתיבת רשומה מותאמת אישית עם ה-ID כטקסט רגיל
+                        return { records: [{ recordType: "text", data: data, lang: "he" }] };
+                }
+            }
+            
+            // שמירת ID למאגר
+            function saveId(id) {
+                // אם ה-ID לא קיים עדיין, נוסיף אותו
+                if (!savedIds.includes(id)) {
+                    savedIds.push(id);
+                    localStorage.setItem('nfc_saved_ids', JSON.stringify(savedIds));
+                    updateSavedIdsDisplay();
+                }
+            }
+            
+            // קבלת IDs שמורים מ-localStorage
+            function getSavedIds() {
+                const saved = localStorage.getItem('nfc_saved_ids');
+                return saved ? JSON.parse(saved) : [];
+            }
+            
+            // עדכון תצוגת ה-IDs השמורים
+            function updateSavedIdsDisplay() {
+                const container = document.getElementById('saved-ids-container');
+                
+                if (savedIds.length === 0) {
+                    container.innerHTML = '<p>אין עדיין IDs שמורים</p>';
+                    return;
+                }
+                
+                let html = '';
+                savedIds.forEach((id, index) => {
+                    html += `
+                        <div class="saved-id">
+                            <span dir="ltr">${id}</span>
+                            <div>
+                                <button class="copy-button use-id-btn" data-id="${id}">השתמש</button>
+                                <button class="copy-button delete-id-btn" data-index="${index}">מחק</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                container.innerHTML = html;
+                
+                // הוספת מאזיני אירועים ללחצנים
+                document.querySelectorAll('.use-id-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const id = btn.getAttribute('data-id');
+                        customIdInput.value = id;
+                        
+                        // מעבר ללשונית כתיבה
+                        document.querySelector('.tab[data-tab="write"]').click();
+                    });
+                });
+                
+                document.querySelectorAll('.delete-id-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const index = parseInt(btn.getAttribute('data-index'));
+                        savedIds.splice(index, 1);
+                        localStorage.setItem('nfc_saved_ids', JSON.stringify(savedIds));
+                        updateSavedIdsDisplay();
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>
